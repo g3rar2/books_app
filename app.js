@@ -49,15 +49,36 @@ app.post('/api/libros',(req,res)=>{
         if(err){
             return res.status(500).json({status:500,message:"Error",data:null});
         }else{
-            libro.codigo=result.insertId;
+
            return  res.status(200).json({status:200,message:"Sucess",data:libro});
         }
     })
 })
 
 
+app.put('/api/libros',(req,res)=>{
+    const libro=req.body;
+    const sql="update libros set titulo=?,autor=?,anio=? where codigo=?";
+    pool.query(sql,[libro.titulo,libro.autor,libro.anio,libro.codigo],(err,result)=>{
+        if(err){
+            return res.status(500).json({status:500,message:"Error",data:null});
+        }else{
+            return res.status(200).json({status:200,message:"Sucess",data:libro});
+        }
+    })
+})
 
-
+app.delete('/api/libros',(req,res)=>{
+    const libro=req.body;
+    const sql="delete from libros where codigo=?";
+    pool.query(sql,[libro.codigo],(err,result)=>{
+        if(err){
+            return res.status(500).json({status:500,message:"Error",data:null});
+        }else{
+            return res.status(200).json({status:200,message:"Sucess",data:null});
+        }
+    })
+})
 
 
 
