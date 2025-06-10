@@ -1,7 +1,12 @@
 const express = require('express');
 const mysql=require('mysql2')
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const app = express();
 const port=3000;
+
+
+
 
 const pool=mysql.createPool({
     host:'localhost',
@@ -16,6 +21,49 @@ err? console.log("No se pudo conectar a la base de datos"):console.log("Conexion
 
 
 app.use(express.json());
+
+
+app.post('/api/login', (req,res)=>{
+    const userAuth=req.body;
+
+    if(!userAuth.username || !userAuth.password){
+        return res.status(403).send({status:403,message:"Todos los campos son requeridos"});
+    }
+
+    const sql='select * from user where username=?';
+
+    pool.query(sql,[userAuth.username], (err,result)=>{
+        if(err){
+            return res.status(500).json({status:500,message:"Error en la consulta"});
+        }
+
+        if(result.length===0){
+            return res.status(401).json({status:401,message:"Credenciales invalidas"});
+        }
+
+
+        let user=result[0];
+        const isMatch=bcrypt.compare(userAuth.password,user.password);
+
+
+        if(!isMatch){
+            return res.status(401).json({status:401,message:"Credenciales invalidas"});
+        }
+
+        res.status(200).json({status:200,message:"Success"});
+    })
+})
+
+
+
+app.get('/api/gethash/:plainText', async (req,res)=>{
+    const plainText=req.params.plainText;
+    const saltRound=10;
+    const hash= await bcrypt.hashSync(plainText,saltRound);
+    return res.send(hash);
+})
+
+
 
 app.get('/api/libros',(req,res)=>{
     const sql = "select * from libros";
