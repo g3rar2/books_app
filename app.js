@@ -23,7 +23,7 @@ err? console.log("No se pudo conectar a la base de datos"):console.log("Conexion
 app.use(express.json());
 
 
-app.post('/api/login', (req,res)=>{
+app.post('/api/login', async (req,res)=>{
     const userAuth=req.body;
 
     if(!userAuth.username || !userAuth.password){
@@ -32,7 +32,7 @@ app.post('/api/login', (req,res)=>{
 
     const sql='select * from user where username=?';
 
-    pool.query(sql,[userAuth.username], (err,result)=>{
+    pool.query(sql,[userAuth.username], async (err,result)=>{
         if(err){
             return res.status(500).json({status:500,message:"Error en la consulta"});
         }
@@ -43,7 +43,7 @@ app.post('/api/login', (req,res)=>{
 
 
         let user=result[0];
-        const isMatch=bcrypt.compare(userAuth.password,user.password);
+        const isMatch= await  bcrypt.compare(userAuth.password,user.password);
 
 
         if(!isMatch){
