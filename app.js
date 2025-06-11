@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const app = express();
 const port=3000;
+const SECRET_KEY='MyClaveSecreta';
 
 
 
@@ -21,6 +22,27 @@ err? console.log("No se pudo conectar a la base de datos"):console.log("Conexion
 
 
 app.use(express.json());
+
+const authMiddleware=(req,res,next)=>{
+    const authHeader = req.headers['authorization'];
+
+    if(!authHeader){
+        return res.status(401).json({status:'401',message:"Token no proporcionado"});
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, SECRET_KEY, (err,user) => {
+        if(err){
+            return res.status(401).json({status:'401',message:"Token expiro"});
+        }
+        next();
+    })
+
+
+}
+
+
 
 
 app.post('/api/login', async (req,res)=>{
@@ -50,13 +72,22 @@ app.post('/api/login', async (req,res)=>{
             return res.status(401).json({status:401,message:"Credenciales invalidas"});
         }
 
-        res.status(200).json({status:200,message:"Success"});
+
+
+        const token=jwt.sign(
+            {username: user.username,},
+            SECRET_KEY,
+            {expiresIn: '1h'}
+        )
+        
+
+        res.status(200).json({status:200,message:"Success",token:token});
     })
 })
 
 
 
-app.get('/api/gethash/:plainText', async (req,res)=>{
+app.get('/api/gethash/:plainText',authMiddleware ,async (req,res)=>{
     const plainText=req.params.plainText;
     const saltRound=10;
     const hash= await bcrypt.hashSync(plainText,saltRound);
@@ -65,7 +96,7 @@ app.get('/api/gethash/:plainText', async (req,res)=>{
 
 
 
-app.get('/api/libros',(req,res)=>{
+app.get('/api/libros',authMiddleware,(req,res)=>{
     const sql = "select * from libros";
     pool.query(sql,(err,result)=>{
         if(err){
@@ -77,7 +108,7 @@ app.get('/api/libros',(req,res)=>{
 })
 
 
-app.get('/api/libros/:codigo',(req,res)=>{
+app.get('/api/libros/:codigo',authMiddleware,(req,res)=>{
     const codigo=parseInt(req.params.codigo)
     const sql = "select * from libros where codigo = ?";
     pool.query(sql,codigo,(err,result)=>{
@@ -90,7 +121,7 @@ app.get('/api/libros/:codigo',(req,res)=>{
 })
 
 
-app.post('/api/libros',(req,res)=>{
+app.post('/api/libros',authMiddleware,(req,res)=>{
     const libro=req.body;
     const sql = "insert into libros (titulo,autor,anio) values (?,?,?)";
     pool.query(sql,[libro.titulo,libro.autor,libro.anio],(err,result)=>{
@@ -104,7 +135,7 @@ app.post('/api/libros',(req,res)=>{
 })
 
 
-app.put('/api/libros',(req,res)=>{
+app.put('/api/libros',authMiddleware,(req,res)=>{
     const libro=req.body;
     const sql="update libros set titulo=?,autor=?,anio=? where codigo=?";
     pool.query(sql,[libro.titulo,libro.autor,libro.anio,libro.codigo],(err,result)=>{
@@ -116,7 +147,7 @@ app.put('/api/libros',(req,res)=>{
     })
 })
 
-app.delete('/api/libros',(req,res)=>{
+app.delete('/api/libros',authMiddleware,(req,res)=>{
     const libro=req.body;
     const sql="delete from libros where codigo=?";
     pool.query(sql,[libro.codigo],(err,result)=>{
