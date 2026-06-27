@@ -3,6 +3,8 @@ node_modules/
 
 # Variables de entorno
 .env
+.env.*
+!.env.example
 .env.local
 .env.*.local
 
@@ -18,6 +20,8 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
+*.suo
+*.user
 
 # Build
 dist/
